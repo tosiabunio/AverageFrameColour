@@ -36,6 +36,11 @@ Alternatively, pass the URL directly as a command line argument:
 python3 average-colours.py https://www.youtube.com/watch?v=hNCmb-4oXJA
 ```
 
+The output image resolution can be set with `-r`/`--resolution` (default is 1920x1080):
+```
+python3 average-colours.py https://www.youtube.com/watch?v=hNCmb-4oXJA --resolution 1280x720
+```
+
 Now just wait until the image is saved in the script folder (as a PNG) and an output image is displayed. 
 
 ## Contributing

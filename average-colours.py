@@ -4,10 +4,10 @@
 # pillow
 
 from pytubefix import YouTube
+import argparse
 import cv2
 import os
 import shutil
-import sys
 from PIL import Image, ImageStat, ImageDraw
 
 #Get average colour of frames
@@ -35,7 +35,14 @@ def get_colour_list(download_folder, download_name, frame_folder):
 def image_scale(index, scale):
   return int(index * scale)
 
-def average_colours(video_url):
+def parse_resolution(value):
+  try:
+    width, height = value.lower().split("x")
+    return (int(width), int(height))
+  except ValueError:
+    raise argparse.ArgumentTypeError("resolution must be WIDTHxHEIGHT, e.g. 1920x1080")
+
+def average_colours(video_url, resolution=(1920, 1080)):
   download_folder = "cache"
   download_name = "test"
   frame_folder = os.path.join(download_folder,"frames")
@@ -65,15 +72,17 @@ def average_colours(video_url):
   for index, value in enumerate(colour_list):
     d.line((index,len(colour_list), index, 0), fill=(int(value[0]),int(value[1]),int(value[2])))
   
-  output_image = output_image.resize((1920,1080),resample=Image.BILINEAR)
+  output_image = output_image.resize(resolution,resample=Image.BILINEAR)
   output_image.format = "PNG"
   output_image.save("output.png", format="PNG")
   output_image.show()
 
 
 if __name__ == "__main__":
-  if len(sys.argv) > 1:
-    video_url = sys.argv[1]
-  else:
-    video_url = input("Enter a YouTube video URL:")
-  average_colours(video_url)
+  parser = argparse.ArgumentParser(description="Creates an image of average frame colours for a YouTube video.")
+  parser.add_argument("url", nargs="?", help="YouTube video URL (prompts if omitted)")
+  parser.add_argument("-r", "--resolution", type=parse_resolution, default=(1920, 1080),
+                      help="output image resolution as WIDTHxHEIGHT (default: 1920x1080)")
+  args = parser.parse_args()
+  video_url = args.url if args.url else input("Enter a YouTube video URL:")
+  average_colours(video_url, args.resolution)
