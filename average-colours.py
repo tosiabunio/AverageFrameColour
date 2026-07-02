@@ -42,7 +42,7 @@ def parse_resolution(value):
   except ValueError:
     raise argparse.ArgumentTypeError("resolution must be WIDTHxHEIGHT, e.g. 1920x1080")
 
-def average_colours(video_url, resolution=(1920, 1080), output_file="output.png"):
+def average_colours(video_url, resolution=(1920, 1080), output_file="output.png", show=True):
   download_folder = "cache"
   download_name = "test"
   frame_folder = os.path.join(download_folder,"frames")
@@ -74,7 +74,8 @@ def average_colours(video_url, resolution=(1920, 1080), output_file="output.png"
   
   output_image = output_image.resize(resolution,resample=Image.BILINEAR)
   output_image.save(output_file)
-  output_image.show()
+  if show:
+    output_image.show()
 
 
 if __name__ == "__main__":
@@ -84,6 +85,8 @@ if __name__ == "__main__":
                       help="output image resolution as WIDTHxHEIGHT (default: 1920x1080)")
   parser.add_argument("-o", "--output", default="output.png",
                       help="output image file name; extension sets the format (default: output.png)")
+  parser.add_argument("-n", "--no-show", action="store_true",
+                      help="don't open the image after saving")
   args = parser.parse_args()
   video_url = args.url if args.url else input("Enter a YouTube video URL:")
-  average_colours(video_url, args.resolution, args.output)
+  average_colours(video_url, args.resolution, args.output, not args.no_show)
