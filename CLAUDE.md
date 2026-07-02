@@ -13,9 +13,9 @@ Install dependencies (no requirements.txt exists):
 pip install pytubefix opencv-python pillow
 ```
 
-Run the script (prompts interactively for a YouTube URL):
+Run the script (takes the YouTube URL as an argument, or prompts interactively if omitted):
 ```
-python average-colours.py
+python average-colours.py [URL]
 ```
 
 There is no test framework, linter, or build step. `test/test.py` is a standalone PIL scratch script, not an automated test — run it directly with `python test/test.py` to see a sample gradient image.

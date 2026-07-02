@@ -5,8 +5,9 @@
 
 from pytubefix import YouTube
 import cv2
-import os 
+import os
 import shutil
+import sys
 from PIL import Image, ImageStat, ImageDraw
 
 #Get average colour of frames
@@ -70,4 +71,9 @@ def average_colours(video_url):
   output_image.show()
 
 
-if __name__ == "__main__": average_colours(str(input("Enter a YouTube video URL:")))
+if __name__ == "__main__":
+  if len(sys.argv) > 1:
+    video_url = sys.argv[1]
+  else:
+    video_url = input("Enter a YouTube video URL:")
+  average_colours(video_url)

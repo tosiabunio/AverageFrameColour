@@ -31,6 +31,10 @@ The script will ask you to paste in the video URL, i.e.:
 ```
 Enter a YouTube video URL: https://www.youtube.com/watch?v=hNCmb-4oXJA
 ```
+Alternatively, pass the URL directly as a command line argument:
+```
+python3 average-colours.py https://www.youtube.com/watch?v=hNCmb-4oXJA
+```
 
 Now just wait until the image is saved in the script folder (as a PNG) and an output image is displayed. 
 
