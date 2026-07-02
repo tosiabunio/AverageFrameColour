@@ -46,8 +46,13 @@ python3 average-colours.py https://www.youtube.com/watch?v=hNCmb-4oXJA --resolut
 `-m`/`--mode` selects how frames are sampled and drawn:
 
 - `classic` (default) — one averaged colour per second of video, drawn as a square image and resized to the output resolution.
-- `strip` — every frame of the video is used and spread over a single 1920x180 bar; each pixel column is the average of its share of frames.
-- `multi` — like `strip`, but the frames are spread over up to 6 stacked bars. The bar count is picked automatically (`ceil(frames / width)`, capped at 6) so that every bar is completely filled — for short videos frames stretch across multiple columns.
+- `strip` — every frame of the video is used and spread over a single 1920x180 bar; each pixel column is the average of its share of frames:
+
+  <img src="docs/assets/images/example-strip.png" alt="strip mode example" width="100%">
+
+- `multi` — like `strip`, but the frames are spread over up to 6 stacked bars. The bar count is picked automatically (`ceil(frames / width)`, capped at 6) so that every bar is completely filled — for short videos frames stretch across multiple columns. The same video as above, read like lines of text:
+
+  <img src="docs/assets/images/example-multi.png" alt="multi mode example" width="100%">
 
 In `strip` and `multi` modes `--resolution` sets the size of a single bar (default 1920x180):
 ```
