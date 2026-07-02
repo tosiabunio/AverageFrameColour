@@ -15,7 +15,7 @@ git clone https://github.com/ShantnuS/AverageFrameColour.git
 
 Next a number of Python libraries need to be installed using pip:
 ```
-pip install pytube3
+pip install pytubefix
 pip install opencv-python
 pip install pillow 
 ```
