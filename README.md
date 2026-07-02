@@ -41,6 +41,19 @@ The output image resolution can be set with `-r`/`--resolution` (default is 1920
 python3 average-colours.py https://www.youtube.com/watch?v=hNCmb-4oXJA --resolution 1280x720 --output my_trailer.png --no-show
 ```
 
+### Modes
+
+`-m`/`--mode` selects how frames are sampled and drawn:
+
+- `classic` (default) — one averaged colour per second of video, drawn as a square image and resized to the output resolution.
+- `strip` — every frame of the video is used and spread over a single 1920x180 bar; each pixel column is the average of its share of frames.
+- `multi` — like `strip`, but the frames are spread over up to 6 stacked bars. The bar count is picked automatically (`ceil(frames / width)`, capped at 6) so that every bar is completely filled — for short videos frames stretch across multiple columns.
+
+In `strip` and `multi` modes `--resolution` sets the size of a single bar (default 1920x180):
+```
+python3 average-colours.py https://www.youtube.com/watch?v=hNCmb-4oXJA -m multi
+```
+
 Now just wait until the image is saved in the script folder (as a PNG) and an output image is displayed. 
 
 ## Contributing
