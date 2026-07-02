@@ -1,9 +1,9 @@
 #pip install list:
-# pytube
+# pytubefix
 # opencv-python
 # pillow
 
-from pytube import YouTube
+from pytubefix import YouTube
 import cv2
 import os 
 import shutil
@@ -51,8 +51,8 @@ def average_colours(video_url):
   #Download video
   print("downloading video...")
   video = YouTube(video_url)
-  stream = video.streams.filter(mime_type="video/mp4",res="360p").all()[0]
-  stream.download(download_folder, download_name)
+  stream = video.streams.filter(mime_type="video/mp4",res="360p").first()
+  stream.download(output_path=download_folder, filename=download_name+".mp4")
 
   print("averaging colours...")
   colour_list = get_colour_list(download_folder, download_name, frame_folder)
