@@ -72,6 +72,32 @@ def render_bars(columns, n_bars, bar_width, bar_height):
     d.line((x, top, x, top + bar_height - 1), fill=(int(value[0]),int(value[1]),int(value[2])))
   return output_image
 
+#YouTube keeps changing which clients it accepts (the default one currently trips
+#bot detection), so try them in turn instead of failing on the first rejection
+YOUTUBE_CLIENTS = ("MWEB", "WEB", "ANDROID", "IOS", "TV", "WEB_EMBED")
+
+def download_video(video_url, output_path, filename):
+  #A client can fail at any step: construction, stream listing, no matching stream,
+  #or the download itself (SABR streams list fine but won't download)
+  target = os.path.join(output_path, filename)
+  failures = []
+  for client in YOUTUBE_CLIENTS:
+    try:
+      #Clear anything a failed attempt left behind, so download() can't skip it
+      if os.path.exists(target):
+        os.remove(target)
+      video = YouTube(video_url, client=client)
+      stream = video.streams.filter(mime_type="video/mp4",res="360p").first()
+      if stream is None:
+        raise RuntimeError("no 360p mp4 stream on offer")
+      stream.download(output_path=output_path, filename=filename)
+      print("  downloaded with the %s client" % client)
+      return
+    except Exception as error:
+      print("  %s client failed: %s" % (client, error))
+      failures.append("%s (%s)" % (client, type(error).__name__))
+  raise RuntimeError("could not download the video; all clients failed: " + ", ".join(failures))
+
 def parse_resolution(value):
   try:
     width, height = value.lower().split("x")
@@ -95,9 +121,7 @@ def average_colours(video_url, mode="classic", resolution=(1920, 1080), output_f
 
   #Download video
   print("downloading video...")
-  video = YouTube(video_url)
-  stream = video.streams.filter(mime_type="video/mp4",res="360p").first()
-  stream.download(output_path=download_folder, filename=download_name+".mp4")
+  download_video(video_url, download_folder, download_name+".mp4")
 
   print("averaging colours...")
   if mode == "classic":
