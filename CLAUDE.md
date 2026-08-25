@@ -15,7 +15,7 @@ pip install pytubefix opencv-python pillow
 
 Run the script (takes the YouTube URL as an argument, or prompts interactively if omitted):
 ```
-python average-colours.py [URL] [-m {classic,strip,multi}] [-r WIDTHxHEIGHT] [-o OUTPUT_FILE] [-n]
+python average-colours.py [URL] [-m {classic,strip,multi}] [-r WIDTHxHEIGHT] [-o OUTPUT_FILE] [-n] [-f]
 ```
 
 There is no test framework, linter, or build step. `test/test.py` is a standalone PIL scratch script, not an automated test — run it directly with `python test/test.py` to see a sample gradient image.
@@ -24,8 +24,8 @@ There is no test framework, linter, or build step. `test/test.py` is a standalon
 
 Everything lives in `average-colours.py`. The pipeline in `average_colours(video_url)`:
 
-1. Deletes and recreates the `cache/` working directory (gitignored).
-2. Downloads the video via pytubefix as `cache/test.mp4` (360p mp4 stream).
+1. Clears `cache/frames/` and makes sure the `cache/` working directory exists (gitignored). The downloaded video is deliberately *not* deleted.
+2. Downloads the video via pytubefix as `cache/<video_id>.mp4` (360p mp4 stream) unless that file already exists, so re-running the same URL with different options reuses the download; `-f`/`--refresh` forces a fresh one. `download_video()` walks `YOUTUBE_CLIENTS` until one produces a file, writing to `<name>.part` and renaming on success so an interrupted run can't leave a truncated file behind. If every client fails it raises `RuntimeError`, which `__main__` turns into an `error:` line and exit code 1.
 3. Frame sampling depends on the mode:
    - `classic`: `get_colour_list()` extracts one frame per second into `cache/frames/` as JPEGs and averages them via `PIL.ImageStat`; drawn as a square image resized to the resolution.
    - `strip`/`multi`: `get_frame_means()` averages every frame in memory with OpenCV (note BGR→RGB swap), `pick_bar_count()` chooses up to 6 bars (`multi` only; `ceil(frames/width)` capped at 6), and `resample_means()` maps frames onto `bars × width` columns — averaging chunks when frames outnumber columns, stretching frames across columns otherwise, always ≥1 frame per column. `render_bars()` stacks the bars with no gaps; `--resolution` means the size of one bar here.

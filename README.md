@@ -41,6 +41,8 @@ The output image resolution can be set with `-r`/`--resolution` (default is 1920
 python3 average-colours.py https://www.youtube.com/watch?v=hNCmb-4oXJA --resolution 1280x720 --output my_trailer.png --no-show
 ```
 
+Videos are downloaded to `cache/` and kept there, keyed by video id, so running the same URL again with different options reuses the download instead of fetching it a second time. Pass `-f`/`--refresh` to download it again anyway, or just delete `cache/`.
+
 ### Modes
 
 `-m`/`--mode` selects how frames are sampled and drawn:

@@ -3,7 +3,7 @@
 # opencv-python
 # pillow
 
-from pytubefix import YouTube
+from pytubefix import YouTube, extract
 import argparse
 import cv2
 import math
@@ -18,9 +18,9 @@ def get_average_colour(image_name, colour_list, frame_folder):
   average = ImageStat.Stat(image).mean
   colour_list.append(average)
   
-def get_colour_list(download_folder, download_name, frame_folder):
+def get_colour_list(video_path, frame_folder):
   #Get frames from video (once every second)
-  vidcap = cv2.VideoCapture(download_folder+"/"+download_name+".mp4")
+  vidcap = cv2.VideoCapture(video_path)
   fps = vidcap.get(cv2.CAP_PROP_FPS)
   success,image = vidcap.read()
   count = 0
@@ -77,21 +77,37 @@ def render_bars(columns, n_bars, bar_width, bar_height):
 #bot detection), so try them in turn instead of failing on the first rejection
 YOUTUBE_CLIENTS = ("MWEB", "WEB", "ANDROID", "IOS", "TV", "WEB_EMBED")
 
-def download_video(video_url, output_path, filename):
+def cached_video_path(download_folder, video_url):
+  #Name the download after the video id, so the same video is reused whatever
+  #options the script is run with
+  try:
+    video_id = extract.video_id(video_url)
+  except Exception:
+    raise RuntimeError("that doesn't look like a YouTube video URL: " + video_url)
+  return os.path.join(download_folder, video_id + ".mp4")
+
+def download_video(video_url, target, refresh=False):
   #A client can fail at any step: construction, stream listing, no matching stream,
   #or the download itself (SABR streams list fine but won't download)
-  target = os.path.join(output_path, filename)
+  if not refresh and os.path.exists(target):
+    print("reusing cached video " + target)
+    return
+  print("downloading video...")
+  #Download to a .part file and rename on success, so a run interrupted midway
+  #can't leave a truncated file that later runs would happily reuse
+  partial = target + ".part"
   failures = []
   for client in YOUTUBE_CLIENTS:
     try:
-      #Clear anything a failed attempt left behind, so download() can't skip it
-      if os.path.exists(target):
-        os.remove(target)
+      if os.path.exists(partial):
+        os.remove(partial)
       video = YouTube(video_url, client=client)
       stream = video.streams.filter(mime_type="video/mp4",res="360p").first()
       if stream is None:
         raise RuntimeError("no 360p mp4 stream on offer")
-      stream.download(output_path=output_path, filename=filename)
+      stream.download(output_path=os.path.dirname(partial) or ".",
+                      filename=os.path.basename(partial))
+      os.replace(partial, target)
       print("  downloaded with the %s client" % client)
       return
     except Exception as error:
@@ -110,27 +126,21 @@ def parse_resolution(value):
   except ValueError:
     raise argparse.ArgumentTypeError("resolution must be WIDTHxHEIGHT, e.g. 1920x1080")
 
-def average_colours(video_url, mode="classic", resolution=(1920, 1080), output_file="output.png", show=True):
+def average_colours(video_url, mode="classic", resolution=(1920, 1080), output_file="output.png", show=True, refresh=False):
   download_folder = "cache"
-  download_name = "test"
   frame_folder = os.path.join(download_folder,"frames")
+  video_path = cached_video_path(download_folder, video_url)
 
-  try:
-    shutil.rmtree(download_folder)
-  except FileNotFoundError:
-    print(download_folder + " folder does not exist. Creating one!")
-
-  #Make sure folders exist
-  os.makedirs(download_folder, exist_ok=True)
+  #Downloads are kept between runs; only the extracted frames are rebuilt, since
+  #they are cheap and depend on which mode is running
+  shutil.rmtree(frame_folder, ignore_errors=True)
   os.makedirs(frame_folder, exist_ok=True)
 
-  #Download video
-  print("downloading video...")
-  download_video(video_url, download_folder, download_name+".mp4")
+  download_video(video_url, video_path, refresh)
 
   print("averaging colours...")
   if mode == "classic":
-    colour_list = get_colour_list(download_folder, download_name, frame_folder)
+    colour_list = get_colour_list(video_path, frame_folder)
     print("writing image...")
     output_image = Image.new('RGB', (len(colour_list), len(colour_list)), color = 'white')
     d = ImageDraw.Draw(output_image)
@@ -138,7 +148,7 @@ def average_colours(video_url, mode="classic", resolution=(1920, 1080), output_f
       d.line((index,len(colour_list), index, 0), fill=(int(value[0]),int(value[1]),int(value[2])))
     output_image = output_image.resize(resolution,resample=Image.BILINEAR)
   else:
-    means = get_frame_means(download_folder+"/"+download_name+".mp4")
+    means = get_frame_means(video_path)
     bar_width, bar_height = resolution
     n_bars = 1 if mode == "strip" else pick_bar_count(len(means), bar_width)
     print("writing image (%d frames, %d bar(s))..." % (len(means), n_bars))
@@ -163,6 +173,8 @@ if __name__ == "__main__":
                       help="output image file name; extension sets the format (default: output.png)")
   parser.add_argument("-n", "--no-show", action="store_true",
                       help="don't open the image after saving")
+  parser.add_argument("-f", "--refresh", action="store_true",
+                      help="re-download the video even if it is already in cache/")
   args = parser.parse_args()
   if args.resolution is None:
     args.resolution = (1920, 1080) if args.mode == "classic" else (1920, 180)
@@ -170,7 +182,7 @@ if __name__ == "__main__":
   #Expected failures get a readable message; anything else keeps its traceback,
   #because that means a bug worth seeing in full
   try:
-    average_colours(video_url, args.mode, args.resolution, args.output, not args.no_show)
+    average_colours(video_url, args.mode, args.resolution, args.output, not args.no_show, args.refresh)
   except KeyboardInterrupt:
     print("\ncancelled", file=sys.stderr)
     sys.exit(130)
