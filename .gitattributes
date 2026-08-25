@@ -1,0 +1,11 @@
+# Store text files with LF in the repo and check them out with native endings,
+# so editing on Windows doesn't rewrite whole files as CRLF
+* text=auto
+
+*.py text
+*.md text
+*.json text
+*.code-workspace text
+LICENSE text
+
+*.png binary
