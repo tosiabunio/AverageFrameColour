@@ -9,6 +9,7 @@ import cv2
 import math
 import os
 import shutil
+import sys
 from PIL import Image, ImageStat, ImageDraw
 
 #Get average colour of frames
@@ -96,7 +97,11 @@ def download_video(video_url, output_path, filename):
     except Exception as error:
       print("  %s client failed: %s" % (client, error))
       failures.append("%s (%s)" % (client, type(error).__name__))
-  raise RuntimeError("could not download the video; all clients failed: " + ", ".join(failures))
+  raise RuntimeError(
+    "could not download the video - all %d clients failed (%s).\n"
+    "  the video may be private, age-restricted or region-locked, or YouTube may have\n"
+    "  changed again - try 'pip install -U pytubefix' and check the URL opens in a browser"
+    % (len(YOUTUBE_CLIENTS), ", ".join(failures)))
 
 def parse_resolution(value):
   try:
@@ -162,4 +167,13 @@ if __name__ == "__main__":
   if args.resolution is None:
     args.resolution = (1920, 1080) if args.mode == "classic" else (1920, 180)
   video_url = args.url if args.url else input("Enter a YouTube video URL:")
-  average_colours(video_url, args.mode, args.resolution, args.output, not args.no_show)
+  #Expected failures get a readable message; anything else keeps its traceback,
+  #because that means a bug worth seeing in full
+  try:
+    average_colours(video_url, args.mode, args.resolution, args.output, not args.no_show)
+  except KeyboardInterrupt:
+    print("\ncancelled", file=sys.stderr)
+    sys.exit(130)
+  except (RuntimeError, OSError) as error:
+    print("error: %s" % error, file=sys.stderr)
+    sys.exit(1)
